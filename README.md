@@ -1,4 +1,5 @@
-# Go Learnings Repository
+# GoLang Dungeon
+Welcome to GoLang Dungeon! This repository serves as a space for my practice in creating HTTP servers using the Go programming language.
 
-Welcome to the Go Learnings repository! This repository serves as a collection of small learnings and code snippets that I've accumulated while working with Go (Golang). The purpose is to share knowledge, insights, and code examples that may be helpful to others learning Go or looking for quick references.
-
+### Overview
+In this repository, you'll find various examples, exercises, and projects aimed at honing my skills in building robust and efficient HTTP servers in Go.

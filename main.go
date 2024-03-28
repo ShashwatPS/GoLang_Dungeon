@@ -9,7 +9,15 @@ import (
 	"net/http"
 )
 
-func BookHandler(w http.ResponseWriter, r *http.Request) {
+type User struct {
+	ID        string `json:"id"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Hobby     string `json:"hobby"`
+}
+
+// Route Handlers
+func UserHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	fname := vars["fname"]
 	lname := vars["lname"]
@@ -38,6 +46,22 @@ func BookHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResponse)
 }
 
+func FetchingUsers(w http.ResponseWriter, r *http.Request) {
+	users, err := getAllUsers("Watching Anime")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	jsonData, err := json.Marshal(users)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonData)
+}
+
+// Database Operations
 func saveToDataBase(fname string, lname string, hobby string) error {
 	client := db.NewClient()
 	if err := client.Prisma.Connect(); err != nil {
@@ -68,10 +92,54 @@ func saveToDataBase(fname string, lname string, hobby string) error {
 	return nil
 }
 
+func getAllUsers(hname string) ([]User, error) {
+	client := db.NewClient()
+	if err := client.Prisma.Connect(); err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err := client.Prisma.Disconnect(); err != nil {
+			panic(err)
+		}
+	}()
+
+	ctx := context.Background()
+
+	users, err := client.User.FindMany(
+		db.User.Hobby.Equals(hname),
+	).Exec(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(users) == 0 {
+		fmt.Println("No users found with hobby:", hname)
+		return nil, nil
+	}
+
+	var mappedUsers []User
+	for _, u := range users {
+		mappedUsers = append(mappedUsers, User{
+			ID:        u.ID,
+			FirstName: u.FirstName,
+			LastName:  u.LastName,
+			Hobby:     u.Hobby,
+		})
+	}
+
+	result, _ := json.MarshalIndent(users, "", "  ")
+	fmt.Printf("All users: %s\n", result)
+
+	return mappedUsers, nil
+}
+
 func main() {
 	r := mux.NewRouter()
 
-	r.HandleFunc("/first/{fname}/last/{lname}/hobby/{hname}", BookHandler).Methods("POST")
+	r.HandleFunc("/first/{fname}/last/{lname}/hobby/{hname}", UserHandler).Methods("POST")
+	r.HandleFunc("/users", FetchingUsers).Methods("GET")
 
 	http.ListenAndServe(":3000", r)
 }
