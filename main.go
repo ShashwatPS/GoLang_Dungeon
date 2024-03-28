@@ -16,6 +16,10 @@ type User struct {
 	Hobby     string `json:"hobby"`
 }
 
+type Hobby struct {
+	Hname string `json:"hname"`
+}
+
 // Route Handlers
 func UserHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -47,7 +51,14 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func FetchingUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := getAllUsers("Watching Anime")
+	var user Hobby
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	HobbyName := user.Hname
+	users, err := getAllUsers(HobbyName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -59,6 +70,25 @@ func FetchingUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonData)
+}
+
+func GetUserFromBody(w http.ResponseWriter, r *http.Request) {
+	var user User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	firstName := user.FirstName
+	lastName := user.LastName
+	hobby := user.Hobby
+
+	if err := saveToDataBase(firstName, lastName, hobby); err != nil {
+		panic(err)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("User Posted Successfully"))
 }
 
 // Database Operations
@@ -140,6 +170,7 @@ func main() {
 
 	r.HandleFunc("/first/{fname}/last/{lname}/hobby/{hname}", UserHandler).Methods("POST")
 	r.HandleFunc("/users", FetchingUsers).Methods("GET")
+	r.HandleFunc("/addUser", GetUserFromBody).Methods("POST")
 
 	http.ListenAndServe(":3000", r)
 }
