@@ -172,5 +172,5 @@ func main() {
 	r.HandleFunc("/users", FetchingUsers).Methods("GET")
 	r.HandleFunc("/addUser", GetUserFromBody).Methods("POST")
 
-	http.ListenAndServe(":3000", r)
+	http.ListenAndServe(":4000", r)
 }
