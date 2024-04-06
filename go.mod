@@ -8,3 +8,5 @@ require (
 	github.com/shopspring/decimal v1.3.1
 	github.com/steebchen/prisma-client-go v0.35.0
 )
+
+require github.com/rs/cors v1.10.1 // indirect
